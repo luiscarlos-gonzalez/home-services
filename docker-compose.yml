@@ -1,0 +1,32 @@
+version: '3.1'
+
+services:
+  ghost:
+    image: ghost:5.45.1
+    restart: always
+    ports:
+      - 8080:2368
+    environment:
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: ${MYSQL_USER}
+      database__connection__password: ${MYSQL_PASSWORD}
+      database__connection__database: ${MYSQL_DATABASE}
+      mail__transport: 'SMTP'
+      mail__from: 'Kentverger <iam@kentverger.com>'
+      mail__options__service: 'SMTP'
+      mail__options__host: ${MAIL_HOST}
+      mail__options__port: 587
+      mail__options__auth__user: ${MAIL_USER}
+      mail__options__auth__pass: ${MAIL_PASSWORD}
+      url: ${URL}
+      NODE_ENV: ${NODE_ENV}
+
+  db:
+    image: mysql:8.0.33
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
