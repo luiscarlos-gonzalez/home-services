@@ -1,32 +1,121 @@
 version: '3.1'
 
 services:
-  ghost:
-    image: ghost:5.45.1
-    restart: always
+  nginx:
+    image: lscr.io/linuxserver/nginx:latest
+    container_name: nginx
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Mexico_City
+    volumes:
+      - ${HOME_DIR}nginx/config:/config
     ports:
-      - 8080:2368
+      - 80:80
+      - 443:443
+    restart: unless-stopped
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
     environment:
-      database__client: mysql
-      database__connection__host: db
-      database__connection__user: ${MYSQL_USER}
-      database__connection__password: ${MYSQL_PASSWORD}
-      database__connection__database: ${MYSQL_DATABASE}
-      mail__transport: 'SMTP'
-      mail__from: 'Kentverger <iam@kentverger.com>'
-      mail__options__service: 'SMTP'
-      mail__options__host: ${MAIL_HOST}
-      mail__options__port: 587
-      mail__options__auth__user: ${MAIL_USER}
-      mail__options__auth__pass: ${MAIL_PASSWORD}
-      url: ${URL}
-      NODE_ENV: ${NODE_ENV}
-
-  db:
-    image: mysql:8.0.33
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Mexico_City
+    volumes:
+      - ${HOME_DIR}transmission/data:/config
+      - ${HOME_DIR}transmission/downloads:/downloads
+      - ${HOME_DIR}transmission/watch:/watch
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    restart: unless-stopped
+  homer:
+    image: b4bz/homer
+    container_name: homer
+    volumes:
+      - ${HOME_DIR}homer/www/assets:/www/assets
+    ports:
+      - 8080:8080
+    user: 1000:1000
+    environment:
+      - INIT_ASSETS=1
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Mexico_City
+    volumes:
+      - ${HOME_DIR}jackett/data:/config
+      - ${HOME_DIR}jackett/downloads:/downloads
+    ports:
+      - 9117:9117
+    restart: unless-stopped
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Mexico_City
+    volumes:
+      - ${HOME_DIR}radarr/data:/config
+      - ${HOME_DIR}multimedia/movies:/movies
+      - ${HOME_DIR}transmission/downloads:/downloads
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Mexico_City
+    volumes:
+      - ${HOME_DIR}sonarr/data:/config
+      - ${HOME_DIR}multimedia/series:/tv
+      - ${HOME_DIR}transmission/downloads:/downloads
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Mexico_City
+      - VERSION=docker
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ${HOME_DIR}plex/data:/config
+      - ${HOME_DIR}multimedia/series:/tv
+      - ${HOME_DIR}multimedia/movies:/movies
+    ports:
+      - "32400:32400/tcp"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
+    restart: unless-stopped
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    environment:
+      - TZ=America/Mexico_City
+      - FTLCONF_LOCAL_IPV4=192.168.1.123
+    volumes:
+      - ${HOME_DIR}pihole/etc:/etc/pihole
+      - ${HOME_DIR}pihole/dnsmasq.d:/etc/dnsmasq.d
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 8081:80/tcp
     restart: always
-    environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
